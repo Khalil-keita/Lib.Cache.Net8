@@ -1,0 +1,12 @@
+E:\ClassLib\Lib.Cache.Net8\bin\Debug\net8.0\Lib.Cache.Net8.deps.json
+E:\ClassLib\Lib.Cache.Net8\bin\Debug\net8.0\Lib.Cache.Net8.dll
+E:\ClassLib\Lib.Cache.Net8\bin\Debug\net8.0\Lib.Cache.Net8.pdb
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.csproj.AssemblyReference.cache
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.GeneratedMSBuildEditorConfig.editorconfig
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.AssemblyInfoInputs.cache
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.AssemblyInfo.cs
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.csproj.CoreCompileInputs.cache
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.dll
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\refint\Lib.Cache.Net8.dll
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.pdb
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\ref\Lib.Cache.Net8.dll
