@@ -17,6 +17,7 @@ Une librairie de caching simple, performante et robuste pour .NET 8, basée sur 
 - ✅ **Gestion de mémoire** avec pattern `IDisposable`
 - ✅ **Support des types simples et complexes**
 
+## 1. Configuration
 ```
 // Program.cs
 using Lib.Cache.Net8;
