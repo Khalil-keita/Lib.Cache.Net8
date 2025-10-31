@@ -58,6 +58,16 @@ namespace Lib.Cache.Net8
         /// <param name="keys">Collection de clés des éléments à récupérer</param>
         /// <returns>Collection des éléments trouvés dans le cache</returns>
         Task<IEnumerable<T>> GetManyAsync<T>(IEnumerable<string> keys);
+
+        /// <summary>
+        /// Récupère un élément depuis le cache ou le crée s'il n'existe pas.
+        /// Version pour les éléments implémentant ICacheItem avec gestion automatique de la clé.
+        /// </summary>
+        /// <typeparam name="T">Type de l'objet à récupérer/créer, doit implémenter ICacheItem</typeparam>
+        /// <param name="factory">Fonction factory pour créer l'élément si non présent dans le cache</param>
+        /// <param name="expirationMinutes">Durée d'expiration en minutes (30 par défaut)</param>
+        /// <returns>L'élément depuis le cache ou nouvellement créé</returns>
+        Task<T> GetOrCreateAsync<T>(Func<Task<T>> factory, int expirationMinutes = 30) where T : ICacheItem;
     }
 
     /// <summary>
@@ -79,10 +89,11 @@ namespace Lib.Cache.Net8
     /// Offre des fonctionnalités de cache avec expiration, gestion des collections
     /// et accès thread-safe via sémaphore.
     /// </summary>
-    public class CacheService(IMemoryCache memoryCache, ILogger<CacheService> logger) : ICacheService
+    public class CacheService(IMemoryCache memoryCache, ILogger<CacheService> logger) : ICacheService, IDisposable
     {
         private readonly IMemoryCache _memoryCache = memoryCache;
         private readonly ILogger<CacheService> _logger = logger;
+        private bool _disposed;
 
         /// <summary>
         /// Sémaphore pour garantir l'accès thread-safe aux opérations d'écriture.
@@ -101,13 +112,13 @@ namespace Lib.Cache.Net8
             try
             {
                 // Construction de la clé finale avec le préfixe pour l'isolation
-                var cacheKey = BuildCacheKey(key);
+                string cacheKey = BuildCacheKey(key);
 
                 // Tentative de récupération depuis le cache mémoire
                 if (_memoryCache.TryGetValue(cacheKey, out T cachedItem))
                 {
                     _logger.LogDebug("Cache hit for key: {Key}", cacheKey);
-                    return Task.FromResult<T?>(cachedItem);
+                    return Task.FromResult(cachedItem);
                 }
 
                 // Log en cas d'échec de récupération (cache miss)
@@ -133,24 +144,24 @@ namespace Lib.Cache.Net8
             try
             {
                 // Construction de la clé à partir de la propriété CacheKey de l'objet
-                var cacheKey = BuildCacheKey(item.CacheKey);
+                string cacheKey = BuildCacheKey(item.CacheKey);
 
                 // Configuration des options de cache : expiration glissante et taille
-                var cacheOptions = new MemoryCacheEntryOptions
+                MemoryCacheEntryOptions cacheOptions = new()
                 {
                     SlidingExpiration = TimeSpan.FromMinutes(expirationMinutes),
                     Size = 1 // Taille unitaire pour le tracking de mémoire
                 };
 
                 // Stockage effectif dans le cache mémoire
-                _memoryCache.Set(cacheKey, item, cacheOptions);
+                _ = _memoryCache.Set(cacheKey, item, cacheOptions);
                 _logger.LogDebug("Item cached successfully with key: {Key}", cacheKey);
             }
             finally
             {
                 // Libération du verrou dans un bloc finally pour garantir l'exécution
                 // même en cas d'exception
-                _semaphore.Release();
+                _ = _semaphore.Release();
             }
         }
 
@@ -161,7 +172,7 @@ namespace Lib.Cache.Net8
 
             // DÉCOMPOSITION DE LA COLLECTION : chaque élément est stocké individuellement
             // Création d'une tâche pour chaque élément de la collection
-            var tasks = items.Select(item => SetAsync(item, expirationMinutes));
+            IEnumerable<Task> tasks = items.Select(item => SetAsync(item, expirationMinutes));
 
             // Exécution parallèle de toutes les opérations de stockage
             await Task.WhenAll(tasks);
@@ -173,7 +184,7 @@ namespace Lib.Cache.Net8
         public Task RemoveAsync(string key)
         {
             // Construction de la clé et suppression directe du cache
-            var cacheKey = BuildCacheKey(key);
+            string cacheKey = BuildCacheKey(key);
             _memoryCache.Remove(cacheKey);
             _logger.LogDebug("Item removed from cache with key: {Key}", cacheKey);
             return Task.CompletedTask;
@@ -183,25 +194,79 @@ namespace Lib.Cache.Net8
         {
             // Vérification de l'existence sans récupération de la valeur
             // Méthode performante car elle évite la désérialisation
-            var cacheKey = BuildCacheKey(key);
-            var exists = _memoryCache.TryGetValue(cacheKey, out _);
+            string cacheKey = BuildCacheKey(key);
+            bool exists = _memoryCache.TryGetValue(cacheKey, out _);
             return Task.FromResult(exists);
         }
 
         public async Task<IEnumerable<T>> GetManyAsync<T>(IEnumerable<string> keys)
         {
             // Création d'une tâche de récupération pour chaque clé
-            var tasks = keys.Select(async key =>
+            IEnumerable<Task<T?>> tasks = keys.Select(async key =>
             {
-                var item = await GetAsync<T>(key);
+                T? item = await GetAsync<T>(key);
                 return item;
             });
 
             // Exécution parallèle de toutes les récupérations
-            var items = await Task.WhenAll(tasks);
+            T?[] items = await Task.WhenAll(tasks);
 
             // Filtrage des résultats null et retour de la collection typée
             return items.Where(item => item is not null)!;
+        }
+
+        public async Task<T> GetOrCreateAsync<T>(Func<Task<T>> factory, int expirationMinutes = 30) where T : ICacheItem
+        {
+            ArgumentNullException.ThrowIfNull(factory);
+
+            // Exécution de la factory pour obtenir l'élément et sa clé
+            T item = await factory().ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Factory function returned null");
+
+            // Utilisation de la clé de l'élément pour le cache
+            string cacheKey = BuildCacheKey(item.CacheKey);
+
+            try
+            {
+                // Vérification si l'élément existe déjà
+                if (_memoryCache.TryGetValue(cacheKey, out T cachedItem))
+                {
+                    _logger.LogDebug("Cache hit for ICacheItem with key: {Key}", cacheKey);
+                    return cachedItem!;
+                }
+
+                await _semaphore.WaitAsync();
+                try
+                {
+                    // Double vérification après acquisition du verou
+                    if (_memoryCache.TryGetValue(cacheKey, out cachedItem))
+                    {
+                        _logger.LogDebug("Cache hit after lock acquisition for ICacheItem with key: {Key}", cacheKey);
+                        return cachedItem!;
+                    }
+
+                    // Configuration et stockage dans le cache
+                    MemoryCacheEntryOptions cacheOptions = new()
+                    {
+                        SlidingExpiration = TimeSpan.FromMinutes(expirationMinutes),
+                        Size = 1
+                    };
+
+                    _ = _memoryCache.Set(cacheKey, item, cacheOptions);
+
+                    _logger.LogInformation("ICacheItem created and cached successfully with key: {Key}", cacheKey);
+                    return item;
+                }
+                finally
+                {
+                    _ = _semaphore.Release();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetOrCreateAsync for ICacheItem with key: {Key}", cacheKey);
+                throw new InvalidOperationException($"Failed to get or create cache item for key '{cacheKey}'", ex);
+            }
         }
 
         /// <summary>
@@ -213,6 +278,44 @@ namespace Lib.Cache.Net8
         private static string BuildCacheKey(string key)
         {
             return $"{CachePrefix}:{key}";
+        }
+
+        /// <summary>
+        /// Libère les ressources managées et non-managées
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Implémentation protégée du pattern Dispose
+        /// </summary>
+        /// <param name="disposing">True pour libérer les ressources managées et non-managées, False pour libérer seulement les non-managées</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                // Libère les ressources managées
+                _semaphore?.Dispose();
+                _logger.LogDebug("CacheService resources disposed");
+            }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Finaliseur pour libérer les ressources non-managées en cas d'oubli de Dispose
+        /// </summary>
+        ~CacheService()
+        {
+            Dispose(false);
         }
     }
 
@@ -232,7 +335,7 @@ namespace Lib.Cache.Net8
         public static IServiceCollection AddCacheService(this IServiceCollection services)
         {
             // Configuration par défaut du cache mémoire
-            services.AddMemoryCache((option) =>
+            _ = services.AddMemoryCache((option) =>
             {
                 option.SizeLimit = 1024; // Limite maximale d'items en cache
                 option.CompactionPercentage = 0.2; // Pourcentage de compaction quand la limite est atteinte
@@ -240,7 +343,7 @@ namespace Lib.Cache.Net8
 
             // Enregistrement du service de cache avec durée de vie Scoped
             // (une instance par requête dans une application web)
-            services.AddScoped<ICacheService, CacheService>();
+            _ = services.AddScoped<ICacheService, CacheService>();
             return services;
         }
 
@@ -254,10 +357,11 @@ namespace Lib.Cache.Net8
         public static IServiceCollection AddCacheService(this IServiceCollection services, Action<MemoryCacheOptions> configure)
         {
             // Configuration personnalisée du cache mémoire
-            services.AddMemoryCache(configure);
+            _ = services.AddMemoryCache(configure);
 
             // Enregistrement du service de cache
-            services.AddScoped<ICacheService, CacheService>();
+            _ = services.AddScoped<ICacheService, CacheService>();
+
             return services;
         }
     }
