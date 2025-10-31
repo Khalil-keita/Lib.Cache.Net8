@@ -61,13 +61,14 @@ namespace Lib.Cache.Net8
 
         /// <summary>
         /// Récupère un élément depuis le cache ou le crée s'il n'existe pas.
-        /// Version pour les éléments implémentant ICacheItem avec gestion automatique de la clé.
+        /// Pattern thread-safe garantissant une seule exécution de la factory en cas d'accès concurrent.
         /// </summary>
-        /// <typeparam name="T">Type de l'objet à récupérer/créer, doit implémenter ICacheItem</typeparam>
+        /// <typeparam name="T">Type de l'objet à récupérer/créer</typeparam>
+        /// <param name="key">Clé unique identifiant l'élément dans le cache</param>
         /// <param name="factory">Fonction factory pour créer l'élément si non présent dans le cache</param>
         /// <param name="expirationMinutes">Durée d'expiration en minutes (30 par défaut)</param>
         /// <returns>L'élément depuis le cache ou nouvellement créé</returns>
-        Task<T> GetOrCreateAsync<T>(Func<Task<T>> factory, int expirationMinutes = 30) where T : ICacheItem;
+        Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, int expirationMinutes = 30);
     }
 
     /// <summary>
@@ -215,47 +216,51 @@ namespace Lib.Cache.Net8
             return items.Where(item => item is not null)!;
         }
 
-        public async Task<T> GetOrCreateAsync<T>(Func<Task<T>> factory, int expirationMinutes = 30) where T : ICacheItem
+        public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, int expirationMinutes = 30)
         {
+            ArgumentException.ThrowIfNullOrEmpty(key);
             ArgumentNullException.ThrowIfNull(factory);
 
-            // Exécution de la factory pour obtenir l'élément et sa clé
-            T item = await factory().ConfigureAwait(false)
-                ?? throw new InvalidOperationException("Factory function returned null");
-
-            // Utilisation de la clé de l'élément pour le cache
-            string cacheKey = BuildCacheKey(item.CacheKey);
+            string cacheKey = BuildCacheKey(key);
 
             try
             {
-                // Vérification si l'élément existe déjà
+                // Tentative de récupération depuis le cache
                 if (_memoryCache.TryGetValue(cacheKey, out T cachedItem))
                 {
-                    _logger.LogDebug("Cache hit for ICacheItem with key: {Key}", cacheKey);
+                    _logger.LogDebug("Cache hit for key: {Key}", cacheKey);
                     return cachedItem!;
                 }
 
+                _logger.LogDebug("Cache miss for key: {Key}. Creating new item...", cacheKey);
+
+                // Acquisition du verrou pour éviter le cache stampede
                 await _semaphore.WaitAsync();
                 try
                 {
-                    // Double vérification après acquisition du verou
+                    // Double vérification après acquisition du verrou
                     if (_memoryCache.TryGetValue(cacheKey, out cachedItem))
                     {
-                        _logger.LogDebug("Cache hit after lock acquisition for ICacheItem with key: {Key}", cacheKey);
+                        _logger.LogDebug("Cache hit after lock acquisition for key: {Key}", cacheKey);
                         return cachedItem!;
                     }
 
-                    // Configuration et stockage dans le cache
+                    // Exécution de la factory pour créer l'élément
+                    T newItem = await factory().ConfigureAwait(false)
+                        ?? throw new InvalidOperationException("Factory function returned null");
+
+                    // Configuration des options de cache
                     MemoryCacheEntryOptions cacheOptions = new()
                     {
                         SlidingExpiration = TimeSpan.FromMinutes(expirationMinutes),
                         Size = 1
                     };
 
-                    _ = _memoryCache.Set(cacheKey, item, cacheOptions);
+                    // Stockage dans le cache
+                    _ = _memoryCache.Set(cacheKey, newItem, cacheOptions);
 
-                    _logger.LogInformation("ICacheItem created and cached successfully with key: {Key}", cacheKey);
-                    return item;
+                    _logger.LogInformation("Item created and cached successfully with key: {Key}", cacheKey);
+                    return newItem;
                 }
                 finally
                 {
@@ -264,8 +269,8 @@ namespace Lib.Cache.Net8
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetOrCreateAsync for ICacheItem with key: {Key}", cacheKey);
-                throw new InvalidOperationException($"Failed to get or create cache item for key '{cacheKey}'", ex);
+                _logger.LogError(ex, "Error in GetOrCreateAsync for key: {Key}", key);
+                throw new InvalidOperationException($"Failed to get or create cache item for key '{key}'", ex);
             }
         }
 
