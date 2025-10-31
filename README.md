@@ -29,3 +29,14 @@ builder.Services.AddCacheService();
 
 var app = builder.Build();
 ```
+
+## 2. Créer un modèle
+```
+public class User : ICacheItem //Interface definie dans le service de cache
+{
+    public string Id { get; set; }
+    public string Name { get; set; }
+    
+    public string CacheKey => $"user:{Id}";
+}
+```
