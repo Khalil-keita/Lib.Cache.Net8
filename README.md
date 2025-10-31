@@ -27,6 +27,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Configuration minimale
 builder.Services.AddCacheService();
 
+//Ou avec des options (Action<ImemoryCacheOptions>);
+builder.Services.AddCacheService(op => {
+    op.SizeLimit = 1024;
+    op.CompactionPercentage = 0.2;
+})
+
 var app = builder.Build();
 ```
 
@@ -38,5 +44,30 @@ public class User : ICacheItem //Interface definie dans le service de cache
     public string Name { get; set; }
     
     public string CacheKey => $"user:{Id}";
+}
+```
+
+## Utilisation de base
+```
+public class UserService
+{
+    private readonly ICacheService _cache;
+
+    public UserService(ICacheService cache)
+    {
+        _cache = cache;
+    }
+
+    // Stocker un élément
+    public async Task CacheUserAsync(User user)
+    {
+        await _cache.SetAsync(user, 60); // 60 minutes
+    }
+
+    // Récupérer un élément
+    public async Task<User?> GetUserAsync(string userId)
+    {
+        return await _cache.GetAsync<User>($"user:{userId}");
+    }
 }
 ```
