@@ -10,7 +10,7 @@ namespace Lib.Cache.Net8.Src;
 /// Offre des fonctionnalités de cache avec expiration, gestion des collections
 /// et accès thread-safe via sémaphore.
 /// </summary>
-public class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
+public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
 {
     private readonly IMemoryCache _memoryCache = memoryCache;
     private bool _disposed;
