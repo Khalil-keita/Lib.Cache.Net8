@@ -106,7 +106,6 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
             return;
         }
 
-
         // DÉCOMPOSITION DE LA COLLECTION : chaque élément est stocké individuellement
         // Création d'une tâche pour chaque élément de la collection
         IEnumerable<Task> tasks = validItems.Select(item => SetAsync(item, expirationMinutes));
@@ -272,7 +271,7 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
     /// Implémentation protégée du pattern Dispose
     /// </summary>
     /// <param name="disposing">True pour libérer les ressources managées et non-managées, False pour libérer seulement les non-managées</param>
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (_disposed)
         {
