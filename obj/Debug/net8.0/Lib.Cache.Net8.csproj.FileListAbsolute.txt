@@ -10,3 +10,4 @@ E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.dll
 E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\refint\Lib.Cache.Net8.dll
 E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.pdb
 E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\ref\Lib.Cache.Net8.dll
+E:\ClassLib\Lib.Cache.Net8\obj\Debug\net8.0\Lib.Cache.Net8.sourcelink.json

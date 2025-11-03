@@ -13,12 +13,12 @@ Une librairie de caching simple, performante et robuste pour .NET 8, basée sur 
 - ✅ **Thread-safe** complet avec sémaphore intégré
 - ✅ **Expiration configurable** par élément ou par lot
 - ✅ **Support DI natif** (Dependency Injection)
-- ✅ **Logging intégré** avec `ILogger`
 - ✅ **Gestion de mémoire** avec pattern `IDisposable`
 - ✅ **Support des types simples et complexes**
 
 ## 1. Configuration
-```
+
+```C#
 // Program.cs
 using Lib.Cache.Net8;
 
@@ -37,7 +37,8 @@ var app = builder.Build();
 ```
 
 ## 2. Créer un modèle
-```
+
+```C#
 public class User : ICacheItem //Interface definie dans le service de cache
 {
     public string Id { get; set; }
@@ -48,7 +49,8 @@ public class User : ICacheItem //Interface definie dans le service de cache
 ```
 
 ## Utilisation de base
-```
+
+```C#
 public class UserService
 {
     private readonly ICacheService _cache;

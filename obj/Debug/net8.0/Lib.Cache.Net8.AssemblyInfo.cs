@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Lib.Cache.Net8")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+84ece2a77720f9a16cfd04325f56f125c287a7ea")]
 [assembly: System.Reflection.AssemblyProductAttribute("Lib.Cache.Net8")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Lib.Cache.Net8")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
