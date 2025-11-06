@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "zj21d5BUnIM=",
+  "dgSpecHash": "bnjs6TqoMmo=",
   "success": true,
-  "projectFilePath": "e:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
+  "projectFilePath": "E:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Ibrahima Kalil KEITA\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\9.0.10\\microsoft.extensions.caching.abstractions.9.0.10.nupkg.sha512",
     "C:\\Users\\Ibrahima Kalil KEITA\\.nuget\\packages\\microsoft.extensions.caching.memory\\9.0.10\\microsoft.extensions.caching.memory.9.0.10.nupkg.sha512",
@@ -12,15 +12,5 @@
     "C:\\Users\\Ibrahima Kalil KEITA\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.10\\microsoft.extensions.primitives.9.0.10.nupkg.sha512",
     "C:\\Users\\Ibrahima Kalil KEITA\\.nuget\\packages\\system.diagnostics.diagnosticsource\\9.0.10\\system.diagnostics.diagnosticsource.9.0.10.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1900",
-      "level": "Warning",
-      "message": "Une erreur s’est produite lors de l’obtention des données de vulnérabilité du package\u00A0: Impossible de charger l'index de service pour la source https://api.nuget.org/v3/index.json.",
-      "projectPath": "e:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
-      "warningLevel": 1,
-      "filePath": "e:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }

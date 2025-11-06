@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "e:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj": {}
+    "E:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj": {}
   },
   "projects": {
-    "e:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj": {
+    "E:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
+        "projectUniqueName": "E:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
         "projectName": "Lib.Cache.Net8",
-        "projectPath": "e:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
+        "projectPath": "E:\\ClassLib\\Lib.Cache.Net8\\Lib.Cache.Net8.csproj",
         "packagesPath": "C:\\Users\\Ibrahima Kalil KEITA\\.nuget\\packages\\",
-        "outputPath": "e:\\ClassLib\\Lib.Cache.Net8\\obj\\",
+        "outputPath": "E:\\ClassLib\\Lib.Cache.Net8\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
