@@ -9,8 +9,7 @@
       "Lib.Cache.Net8/1.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Caching.Memory": "9.0.10",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.10",
-          "Microsoft.Extensions.Logging.Abstractions": "9.0.10"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.10"
         },
         "runtime": {
           "Lib.Cache.Net8.dll": {}

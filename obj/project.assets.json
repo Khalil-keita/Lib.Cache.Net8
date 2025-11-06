@@ -396,8 +396,7 @@
   "projectFileDependencyGroups": {
     "net8.0": [
       "Microsoft.Extensions.Caching.Memory >= 9.0.10",
-      "Microsoft.Extensions.DependencyInjection.Abstractions >= 9.0.10",
-      "Microsoft.Extensions.Logging.Abstractions >= 9.0.10"
+      "Microsoft.Extensions.DependencyInjection.Abstractions >= 9.0.10"
     ]
   },
   "packageFolders": {
@@ -455,10 +454,6 @@
             "version": "[9.0.10, )"
           },
           "Microsoft.Extensions.DependencyInjection.Abstractions": {
-            "target": "Package",
-            "version": "[9.0.10, )"
-          },
-          "Microsoft.Extensions.Logging.Abstractions": {
             "target": "Package",
             "version": "[9.0.10, )"
           }

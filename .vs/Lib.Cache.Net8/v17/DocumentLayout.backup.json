@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "E:\\ClassLib\\Lib.Cache.Net8\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|e:\\classlib\\lib.cache.net8\\cache.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|solutionrelative:cache.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|e:\\classlib\\lib.cache.net8\\src\\cache.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|solutionrelative:src\\cache.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -48,11 +48,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "Cache.cs",
-              "DocumentMoniker": "E:\\ClassLib\\Lib.Cache.Net8\\Cache.cs",
-              "RelativeDocumentMoniker": "Cache.cs",
-              "ToolTip": "E:\\ClassLib\\Lib.Cache.Net8\\Cache.cs",
-              "RelativeToolTip": "Cache.cs",
-              "ViewState": "AgIAAH8AAAAAAAAAAAAIwIYAAABWAAAAAAAAAA==",
+              "DocumentMoniker": "E:\\ClassLib\\Lib.Cache.Net8\\src\\Cache.cs",
+              "RelativeDocumentMoniker": "src\\Cache.cs",
+              "ToolTip": "E:\\ClassLib\\Lib.Cache.Net8\\src\\Cache.cs",
+              "RelativeToolTip": "src\\Cache.cs",
+              "ViewState": "AgIAAH8AAAAAAAAAAAAIwIYAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-31T16:07:21.504Z",
               "EditorCaption": ""

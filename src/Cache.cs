@@ -30,6 +30,8 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
     /// </summary>
     private const string CachePrefix = "__cache__";
 
+    #region Méthodes avec contraintes ICacheItem
+
     public async ValueTask<T?> GetAsync<T>(string key, Func<Task<T>>? resolver = null) where T : ICacheItem
     {
         try
@@ -61,7 +63,7 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
         }
     }
 
-    public async Task SetAsync<T>(T? item, int expirationMinutes = DefaultExpirationMinutes) where T : ICacheItem
+    public async Task SetAsync<T>(T item, int expirationMinutes = DefaultExpirationMinutes) where T : ICacheItem
     {
         // Validation des paramètres d'entrée
         ArgumentNullException.ThrowIfNull(item);
@@ -73,17 +75,20 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
             // Construction de la clé à partir de la propriété CacheKey de l'objet
             string cacheKey = BuildCacheKey(item.CacheKey);
 
-            // Configuration des options de cache : expiration glissante et taille
-            MemoryCacheEntryOptions cacheOptions = new()
+            if (!await ExistsAsync(cacheKey))
             {
-                SlidingExpiration = TimeSpan.FromMinutes(expirationMinutes),
-                Size = 1,
-                // Éviter la compaction trop rapide
-                Priority = CacheItemPriority.Normal
-            };
+                // Configuration des options de cache : expiration glissante et taille
+                MemoryCacheEntryOptions cacheOptions = new()
+                {
+                    SlidingExpiration = TimeSpan.FromMinutes(expirationMinutes),
+                    Size = 1,
+                    // Éviter la compaction trop rapide
+                    Priority = CacheItemPriority.Normal
+                };
 
-            // Stockage effectif dans le cache mémoire
-            _ = _memoryCache.Set(cacheKey, item, cacheOptions);
+                // Stockage effectif dans le cache mémoire
+                _ = _memoryCache.Set(cacheKey, item, cacheOptions);
+            }
         }
         finally
         {
@@ -93,13 +98,13 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
         }
     }
 
-    public async Task SetAsync<T>(IEnumerable<T?> items, int expirationMinutes = DefaultExpirationMinutes) where T : ICacheItem
+    public async Task SetAsync<T>(IEnumerable<T> items, int expirationMinutes = DefaultExpirationMinutes) where T : ICacheItem
     {
         // Validation des paramètres d'entrée
         ArgumentNullException.ThrowIfNull(items);
 
         // Filtrer les éléments null
-        List<T?> validItems = [.. items.Where(item => item != null)];
+        List<T> validItems = [.. items.Where(item => item != null)];
 
         if (validItems.Count == 0)
         {
@@ -112,22 +117,6 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
 
         // Exécution parallèle de toutes les opérations de stockage
         await Task.WhenAll(tasks);
-    }
-
-    public void Remove(string key)
-    {
-        // Construction de la clé et suppression directe du cache
-        string cacheKey = BuildCacheKey(key);
-        _memoryCache.Remove(cacheKey);
-    }
-
-    public Task<bool> ExistsAsync(string key)
-    {
-        // Vérification de l'existence sans récupération de la valeur
-        // Méthode performante car elle évite la désérialisation
-        string cacheKey = BuildCacheKey(key);
-        bool exists = _memoryCache.TryGetValue(cacheKey, out _);
-        return Task.FromResult(exists);
     }
 
     public async ValueTask<IEnumerable<T>> GetManyAsync<T>(IEnumerable<string> keys, Func<IEnumerable<string>, Task<IEnumerable<T>>>? resolver = null) where T : ICacheItem
@@ -185,18 +174,25 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
             }
         }
 
-        // 2. Acquisition du verrou pour toute la durée critique
-        await _semaphore.WaitAsync();
         try
         {
-            // Double vérification après acquisition du verrou
-            if (_cacheKeys.TryGetValue(cacheKey, out keys))
+            // 2. Acquisition du verrou pour toute la durée critique
+            await _semaphore.WaitAsync();
+            try
             {
-                IEnumerable<T?> items = await GetManyAsync<T>(keys, null);
-                if (items.Any())
+                // Double vérification après acquisition du verrou
+                if (_cacheKeys.TryGetValue(cacheKey, out keys))
                 {
-                    return items;
+                    IEnumerable<T?> items = await GetManyAsync<T>(keys, null);
+                    if (items.Any())
+                    {
+                        return items;
+                    }
                 }
+            }
+            finally
+            {
+                _ = _semaphore.Release();
             }
 
             // 3. Exécution de la factory sous protection du verrou
@@ -211,7 +207,7 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
             }
 
             // 4. Stockage des nouveaux éléments
-            List<T?> validItems = [.. newItems!.Where(item => item != null)];
+            List<T> validItems = [.. newItems.Where(item => item != null)];
             if (validItems.Count != 0)
             {
                 await SetAsync(validItems, expirationMinutes);
@@ -223,11 +219,205 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
 
             return newItems;
         }
+        catch (Exception)
+        {
+            // Gestion robuste des erreurs
+            return default!;
+        }
+    }
+
+    #endregion Méthodes avec contraintes ICacheItem
+
+    #region Méthodes sans contrainte ICacheItem
+
+    /// <summary>
+    /// Récupère un élément simple depuis le cache sans contrainte de type.
+    /// Supporte tous les types, y compris les types primitifs et les objets simples.
+    /// </summary>
+    public async ValueTask<T?> GetSimpleAsync<T>(string key, Func<Task<T>>? resolver = null)
+    {
+        try
+        {
+            string cacheKey = BuildCacheKey(key);
+
+            // Tentative de récupération depuis le cache mémoire
+            if (_memoryCache.TryGetValue(cacheKey, out T? cachedItem))
+            {
+                return cachedItem;
+            }
+
+            // Tentative de récupération depuis le resolver
+            if (resolver != null)
+            {
+                T? item = await resolver();
+                if (item != null)
+                {
+                    await SetSimpleAsync(key, item);
+                }
+                return item;
+            }
+
+            return default;
+        }
+        catch (Exception)
+        {
+            // Gestion robuste des erreurs
+            return default;
+        }
+    }
+
+    /// <summary>
+    /// Stocke un élément simple dans le cache sans nécessité d'implémenter ICacheItem.
+    /// Utilise une clé explicite fournie en paramètre.
+    /// </summary>
+    public async Task SetSimpleAsync<T>(string key, T item, int expirationMinutes = DefaultExpirationMinutes)
+    {
+        // Validation des paramètres d'entrée
+        ArgumentException.ThrowIfNullOrEmpty(key);
+
+        // Les valeurs null sont autorisées pour représenter l'absence de valeur
+        if (item == null)
+        {
+            return;
+        }
+
+        // Acquisition du verrou pour garantir l'exclusivité d'accès
+        await _semaphore.WaitAsync();
+        try
+        {
+            string cacheKey = BuildCacheKey(key);
+
+            // Configuration des options de cache
+            MemoryCacheEntryOptions cacheOptions = new()
+            {
+                SlidingExpiration = TimeSpan.FromMinutes(expirationMinutes),
+                Size = 1,
+                Priority = CacheItemPriority.Normal
+            };
+
+            // Stockage effectif dans le cache mémoire
+            _ = _memoryCache.Set(cacheKey, item, cacheOptions);
+        }
         finally
         {
+            // Libération du verrou
             _ = _semaphore.Release();
         }
     }
+
+    /// <summary>
+    /// Stocke une collection d'éléments simples sous une seule clé.
+    /// La collection est stockée en tant qu'objet unique (List<T>).
+    /// </summary>
+    public async Task SetSimpleAsync<T>(string key, IEnumerable<T> items, int expirationMinutes = DefaultExpirationMinutes)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(items);
+
+        // Convertir la collection en liste pour la stocker
+        List<T> itemsList = [.. items];
+
+        if (itemsList.Count == 0)
+        {
+            return;
+        }
+
+        // Stocker la collection complète sous une seule clé
+        await SetSimpleAsync(key, itemsList, expirationMinutes);
+    }
+
+    #endregion Méthodes sans contrainte ICacheItem
+
+    #region Implémentation des méthodes spécialisées
+
+    /// <summary>
+    /// Récupère une chaîne de caractères depuis le cache.
+    /// Méthode spécialisée offrant une syntaxe plus naturelle pour le type string.
+    /// </summary>
+    public ValueTask<string?> GetStringAsync(string key, Func<Task<string>>? resolver = null)
+    {
+        return GetSimpleAsync(key, resolver);
+    }
+
+    /// <summary>
+    /// Stocke une chaîne de caractères dans le cache.
+    /// Méthode spécialisée pour une meilleure expérience utilisateur avec les strings.
+    /// </summary>
+    public Task SetStringAsync(string key, string value, int expirationMinutes = 30)
+    {
+        return SetSimpleAsync(key, value, expirationMinutes);
+    }
+
+    /// <summary>
+    /// Récupère un entier depuis le cache.
+    /// Méthode spécialisée pour le type int avec gestion des conversions.
+    /// </summary>
+    public async ValueTask<int?> GetIntAsync(string key, Func<Task<int>>? resolver = null)
+    {
+        try
+        {
+            // Essayer de récupérer comme int directement
+            int? result = await GetSimpleAsync<int?>(key);
+            if (result.HasValue)
+            {
+                return result.Value;
+            }
+
+            // Essayer de récupérer comme string et convertir
+            string? stringResult = await GetStringAsync(key);
+            if (stringResult != null && int.TryParse(stringResult, out int intValue))
+            {
+                await SetIntAsync(key, intValue);
+                return intValue;
+            }
+
+            // Utiliser le resolver si fourni
+            if (resolver != null)
+            {
+                int value = await resolver();
+                await SetIntAsync(key, value);
+                return value;
+            }
+
+            return null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Stocke un entier dans le cache.
+    /// </summary>
+    public Task SetIntAsync(string key, int value, int expirationMinutes = 30)
+    {
+        return SetSimpleAsync(key, value, expirationMinutes);
+    }
+
+    #endregion Implémentation des méthodes spécialisées
+
+    #region Méthodes communes
+
+    public Task<bool> ExistsAsync(string key)
+    {
+        // Vérification de l'existence sans récupération de la valeur
+        // Méthode performante car elle évite la désérialisation
+        string cacheKey = BuildCacheKey(key);
+        bool exists = _memoryCache.TryGetValue(cacheKey, out _);
+        return Task.FromResult(exists);
+    }
+
+    public void Remove(string key)
+    {
+        // Construction de la clé et suppression directe du cache
+        string cacheKey = BuildCacheKey(key);
+        _memoryCache.Remove(cacheKey);
+    }
+
+    #endregion Méthodes communes
+
+    #region Methodes privees utilitaires
 
     private void CacheEmptyCollection(string cacheKey, int expirationMinutes)
     {
@@ -236,7 +426,7 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
         MemoryCacheEntryOptions cacheOptions = new()
         {
             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(expirationMinutes),
-            Size = 1,
+            Size = 1
         };
 
         _ = _memoryCache.Set(cacheKey, emptyMarker, cacheOptions);
@@ -259,15 +449,6 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
     }
 
     /// <summary>
-    /// Libère les ressources managées et non-managées
-    /// </summary>
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
     /// Implémentation protégée du pattern Dispose
     /// </summary>
     /// <param name="disposing">True pour libérer les ressources managées et non-managées, False pour libérer seulement les non-managées</param>
@@ -287,6 +468,19 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
         _disposed = true;
     }
 
+    #endregion Methodes privees utilitaires
+
+    #region Dispose
+
+    /// <summary>
+    /// Libère les ressources managées et non-managées
+    /// </summary>
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
     /// <summary>
     /// Finaliseur pour libérer les ressources non-managées en cas d'oubli de Dispose
     /// </summary>
@@ -294,4 +488,6 @@ public sealed class Cache(IMemoryCache memoryCache) : ICacheable, IDisposable
     {
         Dispose(false);
     }
+
+    #endregion Dispose
 }

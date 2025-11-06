@@ -21,15 +21,16 @@ public static class CacheServiceExtensions
     public static IServiceCollection AddCacheService(this IServiceCollection services)
     {
         // Configuration par défaut du cache mémoire
-        return services.AddMemoryCache((option) =>
+        _ = services.AddMemoryCache((option) =>
         {
             option.SizeLimit = 1024; // Limite maximale d'items en cache
             option.CompactionPercentage = 0.2; // Pourcentage de compaction quand la limite est atteinte
-        })
+        });
 
         // Enregistrement du service de cache avec durée de vie Scoped
         // (une instance par requête dans une application web)
-        .AddScoped<ICacheable, Cache>();
+        _ = services.AddScoped<ICacheable, Cache>();
+        return services;
     }
 
     /// <summary>
@@ -39,14 +40,14 @@ public static class CacheServiceExtensions
     /// <param name="services">Collection des services de l'application</param>
     /// <param name="configure">Action de configuration des options du cache mémoire</param>
     /// <returns>Collection des services pour le chaînage</returns>
-    public static IServiceCollection AddCacheService(
-        this IServiceCollection services, Action<MemoryCacheOptions> configure
-    )
+    public static IServiceCollection AddCacheService(this IServiceCollection services, Action<MemoryCacheOptions> configure)
     {
         // Configuration personnalisée du cache mémoire
-        return services.AddMemoryCache(configure)
+        _ = services.AddMemoryCache(configure);
 
         // Enregistrement du service de cache
-        .AddScoped<ICacheable, Cache>();
+        _ = services.AddScoped<ICacheable, Cache>();
+
+        return services;
     }
 }

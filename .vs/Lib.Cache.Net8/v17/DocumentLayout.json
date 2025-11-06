@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "E:\\ClassLib\\Lib.Cache.Net8\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|e:\\classlib\\lib.cache.net8\\src\\interfaces\\icacheable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|solutionrelative:src\\interfaces\\icacheable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|e:\\classlib\\lib.cache.net8\\src\\cache.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{3584C11A-293C-4A56-8703-F5A2F042BF8C}|Lib.Cache.Net8.csproj|solutionrelative:src\\cache.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -47,12 +51,25 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "ICacheable.cs",
+              "DocumentMoniker": "E:\\ClassLib\\Lib.Cache.Net8\\src\\Interfaces\\ICacheable.cs",
+              "RelativeDocumentMoniker": "src\\Interfaces\\ICacheable.cs",
+              "ToolTip": "E:\\ClassLib\\Lib.Cache.Net8\\src\\Interfaces\\ICacheable.cs",
+              "RelativeToolTip": "src\\Interfaces\\ICacheable.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-06T12:29:40.392Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "Cache.cs",
               "DocumentMoniker": "E:\\ClassLib\\Lib.Cache.Net8\\src\\Cache.cs",
               "RelativeDocumentMoniker": "src\\Cache.cs",
               "ToolTip": "E:\\ClassLib\\Lib.Cache.Net8\\src\\Cache.cs",
               "RelativeToolTip": "src\\Cache.cs",
-              "ViewState": "AgIAAH8AAAAAAAAAAAAIwIYAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAowD8AAABYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-31T16:07:21.504Z",
               "EditorCaption": ""
