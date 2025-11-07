@@ -27,9 +27,8 @@ public static class CacheServiceExtensions
             option.CompactionPercentage = 0.2; // Pourcentage de compaction quand la limite est atteinte
         });
 
-        // Enregistrement du service de cache avec durée de vie Scoped
-        // (une instance par requête dans une application web)
-        _ = services.AddScoped<ICacheable, Cache>();
+        // Enregistrement du service de cache
+        _ = services.AddSingleton<ICacheable, Cache>();
         return services;
     }
 
@@ -46,7 +45,7 @@ public static class CacheServiceExtensions
         _ = services.AddMemoryCache(configure);
 
         // Enregistrement du service de cache
-        _ = services.AddScoped<ICacheable, Cache>();
+        _ = services.AddSingleton<ICacheable, Cache>();
 
         return services;
     }
